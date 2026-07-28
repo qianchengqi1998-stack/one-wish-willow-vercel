@@ -481,6 +481,28 @@ textarea:focus {
   letter-spacing: 0.08em;
 }
 
+.save-state {
+  min-height: 17px;
+  margin: 14px 0 0;
+  color: rgba(24, 21, 16, 0.56);
+  font: 700 9px/1.6 monospace;
+  letter-spacing: 0.08em;
+}
+
+.save-saved {
+  color: #44613f;
+}
+
+.save-error button {
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--red);
+  color: var(--red);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .seal {
   display: inline-block;
   padding: 7px 9px 5px;

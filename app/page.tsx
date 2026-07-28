@@ -8,6 +8,8 @@ type WishRecord = {
   madeAt: string;
 };
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 function WillowHalf({
   side,
   progress,
@@ -44,10 +46,12 @@ export default function Home() {
   const [broken, setBroken] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const frameRef = useRef<number | null>(null);
   const startRef = useRef(0);
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef<number | null>(null);
+  const visitorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     ["one-wish-willow-v1", "one-wish-willow-v2", "one-wish-willow-v3"].forEach(
@@ -74,6 +78,7 @@ export default function Home() {
       visitorId = window.crypto.randomUUID();
       window.localStorage.setItem(visitorKey, visitorId);
     }
+    visitorIdRef.current = visitorId;
 
     void fetch("/api/visitors", {
       method: "POST",
@@ -87,6 +92,27 @@ export default function Home() {
       .then((data) => setVisitorCount(data.visitors))
       .catch(() => setVisitorCount(null));
   }, []);
+
+  const saveWish = async (nextRecord: WishRecord) => {
+    const visitorId = visitorIdRef.current;
+    if (!visitorId) {
+      setSaveState("error");
+      return;
+    }
+
+    setSaveState("saving");
+    try {
+      const response = await fetch("/api/wishes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId, wish: nextRecord.wish }),
+      });
+      if (!response.ok) throw new Error("wish save unavailable");
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  };
 
   const fadeMusic = (
     audio: HTMLAudioElement,
@@ -171,6 +197,7 @@ export default function Home() {
     setProgress(1);
     setBroken(true);
     setRecord(nextRecord);
+    void saveWish(nextRecord);
     navigator.vibrate?.([35, 35, 90]);
     playCrack();
   };
@@ -324,6 +351,15 @@ export default function Home() {
               <span className="seal">WISH SEALED</span>
               <blockquote>“{record.wish}”</blockquote>
               <time>{dateLabel}</time>
+              <p className={`save-state save-${saveState}`}>
+                {saveState === "saving" && "正在封存愿望…"}
+                {saveState === "saved" && "已匿名封存 · 仅站点主人可查看"}
+                {saveState === "error" && (
+                  <button type="button" onClick={() => void saveWish(record)}>
+                    保存失败，点击重试
+                  </button>
+                )}
+              </p>
             </div>
           ) : (
             <>
@@ -337,7 +373,7 @@ export default function Home() {
                 rows={3}
               />
               <div className="field-meta">
-                <span>越具体，愿望越准确</span>
+                <span>匿名保存，仅站点主人可查看</span>
                 <span>{wish.length}/80</span>
               </div>
               <label className="consent">

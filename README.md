@@ -7,9 +7,8 @@ An interactive, one-wish web experience inspired by the film prop ritual.
 Requirements:
 
 - Node.js 22 or newer
-- A Neon Postgres database
 
-Create `.env.local` from `.env.example`, add `DATABASE_URL` locally, then run:
+Install dependencies and run:
 
 ```bash
 npm install
@@ -24,8 +23,8 @@ npm run dev
 - Vercel project: `one-wish-willow`
 - Root Directory: `./`
 - Framework: Next.js
-- Database: Neon Postgres Free
-- Environment variables: sensitive `DATABASE_URL` for all environments
+- Wish archive: shared Sites database
+- Environment variables: none required
 
 Release workflow:
 
@@ -33,5 +32,7 @@ Release workflow:
 local edit → git add → git commit → git push → Vercel automatic deployment
 ```
 
-The visitor counter stores only a randomly generated browser identifier and its
-first-seen timestamp. It does not store wish text or contact details.
+The visitor counter and sealed wishes are forwarded to the shared Sites
+database. Records use a random browser identifier and a `vercel` source label;
+they do not contain contact details. Only the owner-authenticated Sites admin
+page can read the wish archive.
