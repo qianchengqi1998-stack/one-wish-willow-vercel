@@ -6,6 +6,17 @@ type CentralRequest = {
   wish?: string;
 };
 
+export async function checkCentralArchive() {
+  const response = await fetch(`${CENTRAL_API_BASE}/api/wishes`, {
+    cache: "no-store",
+  });
+  const data = await response.json();
+  return Response.json(data, {
+    status: response.status,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
 export async function forwardToCentralArchive(
   route: "visitors" | "wishes",
   payload: CentralRequest,

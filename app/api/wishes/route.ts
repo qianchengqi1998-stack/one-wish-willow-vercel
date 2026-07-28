@@ -1,6 +1,17 @@
-import { forwardToCentralArchive } from "../../../lib/central-wish-api";
+import {
+  checkCentralArchive,
+  forwardToCentralArchive,
+} from "../../../lib/central-wish-api";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  try {
+    return await checkCentralArchive();
+  } catch {
+    return Response.json({ ready: false }, { status: 503 });
+  }
+}
 
 export async function POST(request: Request) {
   try {
