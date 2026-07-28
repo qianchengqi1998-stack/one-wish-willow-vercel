@@ -24,7 +24,8 @@ npm run dev
 - Root Directory: `./`
 - Framework: Next.js
 - Wish archive: shared Sites database
-- Environment variables: none required
+- Environment variables: encrypted `CENTRAL_ARCHIVE_TOKEN` for Production,
+  Preview, and Development
 
 Release workflow:
 

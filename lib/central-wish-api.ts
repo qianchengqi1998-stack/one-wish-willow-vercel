@@ -6,8 +6,20 @@ type CentralRequest = {
   wish?: string;
 };
 
+function authorizationHeaders() {
+  const token = process.env.CENTRAL_ARCHIVE_TOKEN;
+  if (!token) {
+    throw new Error("CENTRAL_ARCHIVE_TOKEN is unavailable");
+  }
+
+  return {
+    "OAI-Sites-Authorization": `Bearer ${token}`,
+  };
+}
+
 export async function checkCentralArchive() {
   const response = await fetch(`${CENTRAL_API_BASE}/api/wishes`, {
+    headers: authorizationHeaders(),
     cache: "no-store",
   });
   const data = await response.json();
@@ -23,7 +35,10 @@ export async function forwardToCentralArchive(
 ) {
   const response = await fetch(`${CENTRAL_API_BASE}/api/${route}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...authorizationHeaders(),
+    },
     body: JSON.stringify({ ...payload, source: "vercel" }),
     cache: "no-store",
   });
