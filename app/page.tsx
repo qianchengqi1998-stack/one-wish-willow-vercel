@@ -35,10 +35,22 @@ function WillowHalf({
       aria-hidden="true"
     >
       <Image
+        className="willow-image-intact"
         src="/willow-real.png"
         alt=""
         width={1536}
         height={500}
+        priority
+        unoptimized
+        draggable={false}
+      />
+      <Image
+        className="willow-image-broken"
+        src="/willow-broken-real-v3.png"
+        alt=""
+        width={1536}
+        height={500}
+        priority
         unoptimized
         draggable={false}
       />
@@ -434,17 +446,19 @@ export default function Home() {
             aria-label="长按 2 秒折断 ONE WISH WILLOW"
           >
             <WillowHalf side="left" progress={progress} broken={broken} />
-            <span
-              className="crack-light"
-              style={
-                {
-                  "--crack": Math.max(0, (progress - 0.5) * 2),
-                  "--crack-scale":
-                    0.34 + Math.max(0, (progress - 0.5) * 2) * 0.66,
-                } as React.CSSProperties
-              }
-              aria-hidden="true"
-            />
+            {!broken && (
+              <span
+                className="crack-light"
+                style={
+                  {
+                    "--crack": Math.max(0, (progress - 0.5) * 2),
+                    "--crack-scale":
+                      0.34 + Math.max(0, (progress - 0.5) * 2) * 0.66,
+                  } as React.CSSProperties
+                }
+                aria-hidden="true"
+              />
+            )}
             {broken && (
               <span className="crack-word" aria-hidden="true">
                 CRACK!
@@ -454,14 +468,10 @@ export default function Home() {
           </button>
           {!broken && (
             <div
-              className="strain-meter"
-              role="progressbar"
-              aria-label="折断进度"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress * 100)}
+              className={`strain-meter ${holding ? "is-filling" : ""}`}
+              aria-hidden="true"
             >
-              <span style={{ width: `${progress * 100}%` }} />
+              <span />
             </div>
           )}
           <p className="artifact-caption">

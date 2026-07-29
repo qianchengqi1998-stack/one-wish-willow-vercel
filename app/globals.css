@@ -313,68 +313,24 @@ h1 em {
   right: 0;
 }
 
+.willow-image-broken {
+  opacity: 0;
+}
+
+.willow-half.is-broken .willow-image-intact {
+  opacity: 0;
+}
+
+.willow-half.is-broken .willow-image-broken {
+  opacity: 1;
+}
+
 .willow-left.is-broken {
   transform: translate(-42px, 27px) rotate(-18deg);
-  clip-path: polygon(
-    0 0,
-    94% 0,
-    100% 12%,
-    96% 27%,
-    100% 42%,
-    95% 58%,
-    100% 73%,
-    96% 86%,
-    100% 100%,
-    0 100%
-  );
 }
 
 .willow-right.is-broken {
   transform: translate(42px, -27px) rotate(17deg);
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% 100%,
-    0 100%,
-    4% 86%,
-    0 73%,
-    5% 58%,
-    0 42%,
-    4% 27%,
-    0 12%
-  );
-}
-
-.willow-half.is-broken::after {
-  content: "";
-  position: absolute;
-  z-index: 3;
-  top: 18%;
-  width: 18px;
-  height: 64%;
-  background:
-    linear-gradient(90deg, rgba(13, 8, 4, 0.9), transparent 28%),
-    repeating-linear-gradient(
-      18deg,
-      #1b1008 0 4px,
-      #49301d 4px 7px,
-      #0d0805 7px 10px
-    );
-  box-shadow:
-    inset 0 0 5px rgba(233, 204, 153, 0.2),
-    0 0 8px rgba(13, 8, 4, 0.5);
-  pointer-events: none;
-}
-
-.willow-left.is-broken::after {
-  right: -1px;
-  clip-path: polygon(34% 0, 100% 12%, 48% 26%, 92% 42%, 28% 58%, 100% 74%, 42% 100%, 0 86%, 38% 72%, 0 55%, 40% 38%, 0 20%);
-}
-
-.willow-right.is-broken::after {
-  left: -1px;
-  transform: scaleX(-1);
-  clip-path: polygon(34% 0, 100% 12%, 48% 26%, 92% 42%, 28% 58%, 100% 74%, 42% 100%, 0 86%, 38% 72%, 0 55%, 40% 38%, 0 20%);
 }
 
 .crack-light {
@@ -382,40 +338,70 @@ h1 em {
   --crack-scale: 0.34;
   position: absolute;
   z-index: 20;
-  top: 18%;
-  left: 50%;
-  width: 6px;
-  height: 64%;
+  inset: 0;
   opacity: var(--crack);
-  background: #fff7d6;
-  box-shadow: 0 0 14px 6px #d74736;
-  clip-path: polygon(35% 0, 100% 23%, 35% 45%, 75% 64%, 0 100%, 34% 68%, 0 47%, 54% 28%);
-  transform: translateX(-50%) scaleY(var(--crack-scale));
+  -webkit-mask: url("/willow-real.png") center / 100% 100% no-repeat;
+  mask: url("/willow-real.png") center / 100% 100% no-repeat;
+  transform: scaleY(var(--crack-scale));
   transform-origin: 50% 50%;
   transition: opacity 80ms linear;
+  pointer-events: none;
 }
 
 .crack-light::before,
 .crack-light::after {
   content: "";
   position: absolute;
-  width: 22px;
-  height: 3px;
-  background: #fff7d6;
-  box-shadow: 0 0 8px 3px rgba(215, 71, 54, 0.88);
+  background: linear-gradient(
+    90deg,
+    rgba(12, 7, 4, 0.98) 0 30%,
+    rgba(177, 128, 76, 0.88) 42% 57%,
+    rgba(20, 11, 6, 0.96) 70% 100%
+  );
+  filter: drop-shadow(0 0 1px rgba(222, 173, 112, 0.28));
 }
 
 .crack-light::before {
-  top: 31%;
-  right: 0;
-  transform: rotate(-31deg);
-  transform-origin: right center;
+  top: 14%;
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 72%;
+  clip-path: polygon(
+    55% 0,
+    30% 9%,
+    58% 18%,
+    22% 30%,
+    50% 42%,
+    14% 55%,
+    44% 68%,
+    8% 82%,
+    36% 100%,
+    68% 88%,
+    45% 74%,
+    84% 61%,
+    58% 48%,
+    90% 36%,
+    60% 24%,
+    84% 12%
+  );
 }
 
 .crack-light::after {
-  bottom: 27%;
-  left: 0;
-  transform: rotate(34deg);
+  top: 48%;
+  left: calc(50% - 2px);
+  width: 34px;
+  height: 7px;
+  clip-path: polygon(
+    0 42%,
+    22% 8%,
+    46% 48%,
+    72% 18%,
+    100% 58%,
+    72% 78%,
+    48% 62%,
+    20% 92%
+  );
+  transform: rotate(-24deg);
   transform-origin: left center;
 }
 
@@ -465,23 +451,28 @@ h1 em {
 }
 
 .strain-meter {
-  width: 190px;
-  height: 4px;
+  width: 170px;
+  height: 2px;
   margin-top: 82px;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(24, 21, 16, 0.48);
-  background: rgba(239, 229, 209, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.34);
+  background: rgba(24, 21, 16, 0.16);
 }
 
 .strain-meter span {
   display: block;
+  width: 0;
   height: 100%;
-  min-width: 0;
   background: var(--red);
   box-shadow: 0 0 7px rgba(179, 39, 31, 0.38);
-  transition: width 45ms linear;
+}
+
+.strain-meter.is-filling span {
+  animation: strain-fill 2s linear forwards;
+}
+
+@keyframes strain-fill {
+  to {
+    width: 100%;
+  }
 }
 
 .artifact-caption {
