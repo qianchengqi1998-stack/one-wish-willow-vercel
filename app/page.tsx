@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { PointerEvent, useEffect, useRef, useState } from "react";
+import {
+  KeyboardEvent,
+  PointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 type WishRecord = {
   wish: string;
@@ -9,6 +15,9 @@ type WishRecord = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+
+const HOLD_DURATION_MS = 2000;
+const AMBIENT_VOLUME = 0.42;
 
 function WillowHalf({
   side,
@@ -52,6 +61,8 @@ export default function Home() {
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef<number | null>(null);
   const visitorIdRef = useRef<string | null>(null);
+  const hapticStepRef = useRef(0);
+  const creakStepRef = useRef(0);
 
   useEffect(() => {
     ["one-wish-willow-v1", "one-wish-willow-v2", "one-wish-willow-v3"].forEach(
@@ -59,13 +70,14 @@ export default function Home() {
     );
     const audio = musicRef.current;
     if (audio) {
-      audio.volume = 0.42;
+      audio.volume = AMBIENT_VOLUME;
       void audio
         .play()
         .then(() => setSoundOn(true))
         .catch(() => setSoundOn(false));
     }
     return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
       if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
       audio?.pause();
     };
@@ -151,8 +163,43 @@ export default function Home() {
     audio.volume = 0;
     void audio.play().then(() => {
       setSoundOn(true);
-      fadeMusic(audio, 0, 0.42, 1400);
+      fadeMusic(audio, 0, AMBIENT_VOLUME, 1400);
     });
+  };
+
+  const playStrainCreak = (intensity: number) => {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const context = new AudioContextClass();
+    const duration = 0.07 + intensity * 0.08;
+    const buffer = context.createBuffer(
+      1,
+      context.sampleRate * duration,
+      context.sampleRate,
+    );
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) {
+      const decay = Math.pow(1 - i / data.length, 2.4);
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+
+    const source = context.createBufferSource();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    filter.type = "bandpass";
+    filter.frequency.value = 360 + intensity * 980;
+    filter.Q.value = 2.8;
+    gain.gain.value = 0.025 + intensity * 0.045;
+    source.buffer = buffer;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    source.start();
+    window.setTimeout(() => context.close(), 350);
   };
 
   const playCrack = () => {
@@ -180,8 +227,11 @@ export default function Home() {
     filter.frequency.value = 1250;
     filter.Q.value = 0.75;
     source.buffer = buffer;
+    const gain = context.createGain();
+    gain.gain.value = 1.35;
     source.connect(filter);
-    filter.connect(context.destination);
+    filter.connect(gain);
+    gain.connect(context.destination);
     source.start();
     window.setTimeout(() => context.close(), 600);
   };
@@ -193,6 +243,7 @@ export default function Home() {
       madeAt: new Date().toISOString(),
     };
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
     setHolding(false);
     setProgress(1);
     setBroken(true);
@@ -200,25 +251,58 @@ export default function Home() {
     void saveWish(nextRecord);
     navigator.vibrate?.([35, 35, 90]);
     playCrack();
+    const audio = musicRef.current;
+    if (audio && !audio.paused) {
+      fadeMusic(audio, audio.volume, 0.3, 760);
+    }
   };
 
   const stopHolding = () => {
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
     setHolding(false);
-    if (!broken) setProgress(0);
+    hapticStepRef.current = 0;
+    creakStepRef.current = 0;
+    if (!broken) {
+      setProgress(0);
+      const audio = musicRef.current;
+      if (audio && !audio.paused && audio.volume !== AMBIENT_VOLUME) {
+        fadeMusic(audio, audio.volume, AMBIENT_VOLUME, 260);
+      }
+    }
   };
 
-  const beginHolding = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!ready || broken || !wish.trim()) return;
+  const startHolding = () => {
+    if (!ready || broken || !wish.trim() || frameRef.current) return;
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    event.currentTarget.setPointerCapture(event.pointerId);
     setHolding(true);
+    hapticStepRef.current = 0;
+    creakStepRef.current = 0;
     startRef.current = performance.now();
 
     const tick = (now: number) => {
-      const next = Math.min((now - startRef.current) / 1600, 1);
+      const next = Math.min((now - startRef.current) / HOLD_DURATION_MS, 1);
       setProgress(next);
+
+      const audio = musicRef.current;
+      if (audio && !audio.paused) {
+        audio.volume = Math.min(0.68, AMBIENT_VOLUME + next * 0.24);
+      }
+
+      const hapticStep =
+        next >= 0.84 ? 3 : next >= 0.58 ? 2 : next >= 0.3 ? 1 : 0;
+      if (hapticStep > hapticStepRef.current) {
+        hapticStepRef.current = hapticStep;
+        navigator.vibrate?.(8 + hapticStep * 4);
+      }
+
+      const creakStep =
+        next >= 0.88 ? 3 : next >= 0.66 ? 2 : next >= 0.42 ? 1 : 0;
+      if (creakStep > creakStepRef.current) {
+        creakStepRef.current = creakStep;
+        playStrainCreak(creakStep / 3);
+      }
+
       if (next >= 1) {
         completeWish();
         return;
@@ -226,6 +310,24 @@ export default function Home() {
       frameRef.current = requestAnimationFrame(tick);
     };
     frameRef.current = requestAnimationFrame(tick);
+  };
+
+  const beginHolding = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!ready || broken || !wish.trim()) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    startHolding();
+  };
+
+  const beginKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (![" ", "Enter"].includes(event.key) || event.repeat) return;
+    event.preventDefault();
+    startHolding();
+  };
+
+  const endKeyboardHold = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (![" ", "Enter"].includes(event.key)) return;
+    event.preventDefault();
+    stopHolding();
   };
 
   const dateLabel = record
@@ -311,17 +413,36 @@ export default function Home() {
           <button
             type="button"
             className={`artifact ${holding ? "is-holding" : ""}`}
+            style={
+              {
+                "--hold-progress": progress,
+                "--shake": `${0.3 + progress * 0.9}px`,
+                "--shake-negative": `${-(0.3 + progress * 0.9) * 0.45}px`,
+                "--shake-small": `${(0.3 + progress * 0.9) * 0.25}px`,
+                "--strain-opacity": progress * 0.5,
+                "--strain-glow": `${8 + progress * 22}px`,
+              } as React.CSSProperties
+            }
             onPointerDown={beginHolding}
             onPointerUp={stopHolding}
             onPointerCancel={stopHolding}
+            onKeyDown={beginKeyboardHold}
+            onKeyUp={endKeyboardHold}
+            onBlur={stopHolding}
             onContextMenu={(event) => event.preventDefault()}
             disabled={!ready || broken || !wish.trim()}
-            aria-label="长按 1.6 秒折断 ONE WISH WILLOW"
+            aria-label="长按 2 秒折断 ONE WISH WILLOW"
           >
             <WillowHalf side="left" progress={progress} broken={broken} />
             <span
               className="crack-light"
-              style={{ opacity: Math.max(0, (progress - 0.72) * 3.6) }}
+              style={
+                {
+                  "--crack": Math.max(0, (progress - 0.5) * 2),
+                  "--crack-scale":
+                    0.34 + Math.max(0, (progress - 0.5) * 2) * 0.66,
+                } as React.CSSProperties
+              }
               aria-hidden="true"
             />
             {broken && (
@@ -338,10 +459,10 @@ export default function Home() {
           )}
           <p className="artifact-caption">
             {holding
-              ? "不要松手…"
+              ? `保持 · ${Math.max(0, 2 - progress * 2).toFixed(1)} 秒`
               : broken
                 ? "CRACKED · 无法复原"
-                : "长按柳枝以折断"}
+                : "不要点击 · 长按 2 秒"}
           </p>
         </div>
 

@@ -231,6 +231,12 @@ h1 em {
 }
 
 .artifact {
+  --hold-progress: 0;
+  --shake: 0.3px;
+  --shake-negative: -0.14px;
+  --shake-small: 0.08px;
+  --strain-opacity: 0;
+  --strain-glow: 8px;
   z-index: 4;
   position: relative;
   width: min(43vw, 590px);
@@ -245,6 +251,17 @@ h1 em {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.artifact::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 18% 10%;
+  border-radius: 50%;
+  opacity: var(--strain-opacity);
+  box-shadow: 0 0 var(--strain-glow) rgba(179, 39, 31, 0.5);
+  pointer-events: none;
 }
 
 .artifact:not(:disabled):active {
@@ -305,15 +322,45 @@ h1 em {
 }
 
 .crack-light {
+  --crack: 0;
+  --crack-scale: 0.34;
   position: absolute;
   z-index: 20;
-  top: 37px;
+  top: 18%;
   left: 50%;
-  width: 5px;
-  height: 50px;
+  width: 6px;
+  height: 64%;
+  opacity: var(--crack);
   background: #fff7d6;
   box-shadow: 0 0 14px 6px #d74736;
   clip-path: polygon(35% 0, 100% 23%, 35% 45%, 75% 64%, 0 100%, 34% 68%, 0 47%, 54% 28%);
+  transform: translateX(-50%) scaleY(var(--crack-scale));
+  transform-origin: 50% 50%;
+  transition: opacity 80ms linear;
+}
+
+.crack-light::before,
+.crack-light::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 3px;
+  background: #fff7d6;
+  box-shadow: 0 0 8px 3px rgba(215, 71, 54, 0.88);
+}
+
+.crack-light::before {
+  top: 31%;
+  right: 0;
+  transform: rotate(-31deg);
+  transform-origin: right center;
+}
+
+.crack-light::after {
+  bottom: 27%;
+  left: 0;
+  transform: rotate(34deg);
+  transform-origin: left center;
 }
 
 .crack-word {
@@ -349,11 +396,16 @@ h1 em {
 }
 
 .artifact.is-holding {
-  animation: strain 90ms infinite alternate;
+  animation: strain 76ms infinite alternate;
 }
 
 @keyframes strain {
-  to { translate: 1px -1px; }
+  from {
+    translate: var(--shake-negative) var(--shake-small);
+  }
+  to {
+    translate: var(--shake) var(--shake-negative);
+  }
 }
 
 .strain-meter {
@@ -367,9 +419,12 @@ h1 em {
   display: block;
   height: 100%;
   background: var(--red);
+  box-shadow: 0 0 7px rgba(179, 39, 31, 0.38);
+  transition: width 45ms linear;
 }
 
 .artifact-caption {
+  min-height: 12px;
   margin: 12px 0 0;
   font: 700 9px/1 monospace;
   letter-spacing: 0.2em;
