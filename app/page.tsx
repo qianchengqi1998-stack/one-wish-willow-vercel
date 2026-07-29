@@ -453,7 +453,14 @@ export default function Home() {
             <WillowHalf side="right" progress={progress} broken={broken} />
           </button>
           {!broken && (
-            <div className="strain-meter" aria-hidden="true">
+            <div
+              className="strain-meter"
+              role="progressbar"
+              aria-label="折断进度"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress * 100)}
+            >
               <span style={{ width: `${progress * 100}%` }} />
             </div>
           )}
@@ -462,7 +469,7 @@ export default function Home() {
               ? `保持 · ${Math.max(0, 2 - progress * 2).toFixed(1)} 秒`
               : broken
                 ? "CRACKED · 无法复原"
-                : "不要点击 · 长按 2 秒"}
+                : "握住柳枝，长按2秒以折断；"}
           </p>
         </div>
 
